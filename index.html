@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SERPENT — Snake Evolved</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="particles" id="particles"></div>
+    <div class="level-flash" id="levelFlash"></div>
+    <div class="toast" id="toast"></div>
+
+    <!-- ══════════ LANDING ══════════ -->
+    <div class="screen" id="landing-screen">
+      <div class="landing-hero">
+        <h1 class="game-title a1">SERPENT</h1>
+        <p class="game-subtitle a2">Snake · Evolved · Reborn</p>
+        <div class="snake-3d-preview a3">
+          <div class="snake-3d" id="snakePreview"></div>
+        </div>
+        <div class="auth-container a4">
+          <button class="auth-btn btn-login" onclick="showAuthScreen('login')">
+            Login
+          </button>
+          <button
+            class="auth-btn btn-signup"
+            onclick="showAuthScreen('signup')"
+          >
+            Sign Up
+          </button>
+        </div>
+        <div class="a5">
+          <button class="auth-btn btn-guest" onclick="startAsGuest()">
+            Play as Guest
+          </button>
+          <p class="guest-note">
+            ⏱ 1-minute trial · Login required to continue
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ AUTH SCREEN ══════════ -->
+    <div class="screen hidden" id="auth-screen">
+      <div class="auth-modal" id="authModal">
+        <div class="mc tl"></div>
+        <div class="mc tr"></div>
+        <div class="mc bl"></div>
+        <div class="mc br"></div>
+        <button class="btn-close-modal" onclick="closeAuth()">✕</button>
+
+        <!-- STEP: LOGIN -->
+        <div id="step-login" class="auth-step hidden">
+          <h2 class="modal-title">Welcome Back</h2>
+          <p class="modal-sub">ENTER YOUR CREDENTIALS</p>
+          <div class="api-error" id="login-err"></div>
+          <div class="form-group">
+            <label class="form-label">Username or Email</label>
+            <input
+              class="form-input"
+              id="login-id"
+              type="text"
+              placeholder="username or email"
+              autocomplete="off"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input
+              class="form-input"
+              id="login-pw"
+              type="password"
+              placeholder="••••••••"
+            />
+          </div>
+          <button class="btn-submit" id="login-btn" onclick="handleLogin()">
+            → Send OTP
+          </button>
+          <button class="btn-secondary" onclick="showStep('forgot')">
+            Forgot Password?
+          </button>
+          <p class="modal-switch">
+            New here? <a onclick="showStep('signup')">Create account</a>
+          </p>
+        </div>
+
+        <!-- STEP: SIGNUP -->
+        <div id="step-signup" class="auth-step hidden">
+          <h2 class="modal-title">Join Serpent</h2>
+          <p class="modal-sub">CREATE YOUR PROFILE</p>
+          <div class="api-error" id="signup-err"></div>
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input
+              class="form-input"
+              id="su-username"
+              type="text"
+              placeholder="choose_a_name"
+              autocomplete="off"
+            />
+            <p class="form-error" id="su-user-err">
+              Username must be 3+ characters
+            </p>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input
+              class="form-input"
+              id="su-email"
+              type="email"
+              placeholder="your@email.com"
+            />
+            <p class="form-error" id="su-email-err">Valid email required</p>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input
+              class="form-input"
+              id="su-pw"
+              type="password"
+              placeholder="min 6 characters"
+            />
+            <p class="form-error" id="su-pw-err">
+              Password must be 6+ characters
+            </p>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm Password</label>
+            <input
+              class="form-input"
+              id="su-confirm"
+              type="password"
+              placeholder="repeat password"
+            />
+            <p class="form-error" id="su-confirm-err">Passwords do not match</p>
+          </div>
+          <button class="btn-submit" id="signup-btn" onclick="handleSignup()">
+            → Create Account
+          </button>
+          <p class="modal-switch">
+            Have an account? <a onclick="showStep('login')">Login</a>
+          </p>
+        </div>
+
+        <!-- STEP: OTP (shared for login & signup verify) -->
+        <div id="step-otp" class="auth-step hidden">
+          <h2 class="modal-title" id="otp-title">Verify OTP</h2>
+          <p class="modal-sub" id="otp-sub">
+            ENTER THE CODE SENT TO YOUR EMAIL
+          </p>
+          <div class="api-error" id="otp-err"></div>
+          <div class="api-success" id="otp-success"></div>
+          <p
+            style="
+              font-size: 0.65rem;
+              color: var(--dim);
+              text-align: center;
+              margin-bottom: 1rem;
+              letter-spacing: 0.05em;
+            "
+          >
+            Code sent to
+            <span id="otp-email-display" style="color: var(--ng)"></span>
+          </p>
+          <div class="otp-inputs">
+            <input
+              class="otp-digit"
+              maxlength="1"
+              data-idx="0"
+              inputmode="numeric"
+            />
+            <input
+              class="otp-digit"
+              maxlength="1"
+              data-idx="1"
+              inputmode="numeric"
+            />
+            <input
+              class="otp-digit"
+              maxlength="1"
+              data-idx="2"
+              inputmode="numeric"
+            />
+            <input
+              class="otp-digit"
+              maxlength="1"
+              data-idx="3"
+              inputmode="numeric"
+            />
+            <input
+              class="otp-digit"
+              maxlength="1"
+              data-idx="4"
+              inputmode="numeric"
+            />
+            <input
+              class="otp-digit"
+              maxlength="1"
+              data-idx="5"
+              inputmode="numeric"
+            />
+          </div>
+          <p class="otp-timer">
+            Code expires in <span id="otp-countdown">10:00</span>
+          </p>
+          <button class="btn-submit" id="otp-btn" onclick="handleOTPVerify()">
+            → Verify
+          </button>
+          <button
+            class="btn-secondary"
+            id="resend-btn"
+            onclick="handleResendOTP()"
+          >
+            ↺ Resend Code
+          </button>
+        </div>
+
+        <!-- STEP: FORGOT PASSWORD -->
+        <div id="step-forgot" class="auth-step hidden">
+          <h2 class="modal-title">Forgot Password</h2>
+          <p class="modal-sub">ENTER YOUR EMAIL TO RESET</p>
+          <div class="api-error" id="forgot-err"></div>
+          <div class="api-success" id="forgot-success"></div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input
+              class="form-input"
+              id="forgot-email"
+              type="email"
+              placeholder="your@email.com"
+            />
+          </div>
+          <button
+            class="btn-submit"
+            id="forgot-btn"
+            onclick="handleForgotPassword()"
+          >
+            → Send Reset OTP
+          </button>
+          <p class="modal-switch">
+            Remember it? <a onclick="showStep('login')">Login</a>
+          </p>
+        </div>
+
+        <!-- STEP: RESET PASSWORD -->
+        <div id="step-reset" class="auth-step hidden">
+          <h2 class="modal-title">Reset Password</h2>
+          <p class="modal-sub">ENTER OTP + NEW PASSWORD</p>
+          <div class="api-error" id="reset-err"></div>
+          <div class="api-success" id="reset-success"></div>
+          <div class="otp-inputs" id="reset-otp-inputs">
+            <input
+              class="otp-digit"
+              maxlength="1"
+              data-idx="0"
+              data-group="reset"
+              inputmode="numeric"
+            />
+            <input
+              class="otp-digit"
+              maxlength="1"
+              data-idx="1"
+              data-group="reset"
+              inputmode="numeric"
+            />
+            <input
+              class="otp-digit"
+              maxlength="1"
+              data-idx="2"
+              data-group="reset"
+              inputmode="numeric"
+            />
+            <input
+              class="otp-digit"
+              maxlength="1"
+              data-idx="3"
+              data-group="reset"
+              inputmode="numeric"
+            />
+            <input
+              class="otp-digit"
+              maxlength="1"
+              data-idx="4"
+              data-group="reset"
+              inputmode="numeric"
+            />
+            <input
+              class="otp-digit"
+              maxlength="1"
+              data-idx="5"
+              data-group="reset"
+              inputmode="numeric"
+            />
+          </div>
+          <div class="form-group" style="margin-top: 0.8rem">
+            <label class="form-label">New Password</label>
+            <input
+              class="form-input"
+              id="reset-pw"
+              type="password"
+              placeholder="min 6 characters"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm New Password</label>
+            <input
+              class="form-input"
+              id="reset-confirm"
+              type="password"
+              placeholder="repeat password"
+            />
+          </div>
+          <button
+            class="btn-submit"
+            id="reset-btn"
+            onclick="handleResetPassword()"
+          >
+            → Reset Password
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ GAME SCREEN ══════════ -->
+    <div class="screen hidden" id="game-screen">
+      <div class="game-wrapper">
+        <div class="hud">
+          <div class="hud-logo">SERPENT</div>
+          <div class="hud-stats">
+            <div class="stat-card">
+              <span class="stat-label">High Score</span
+              ><span class="stat-value" id="hud-highscore">0</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Score</span
+              ><span class="stat-value" id="hud-score">0</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Time</span
+              ><span class="stat-value" id="hud-time" style="font-size: 0.88rem"
+                >00:00</span
+              >
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Level</span
+              ><span class="stat-value" id="hud-level">1</span>
+            </div>
+          </div>
+          <div class="hud-right">
+            <div class="user-badge">
+              <div class="user-avatar" id="user-avatar">G</div>
+              <span id="user-name-display">Guest</span>
+            </div>
+            <div class="guest-timer hidden" id="guest-timer">01:00</div>
+            <button class="hud-btn" onclick="exitToMenu()">✕ Exit</button>
+          </div>
+        </div>
+        <div class="speed-bar">
+          <div class="speed-fill" id="speedFill" style="width: 10%"></div>
+        </div>
+        <div class="board-area">
+          <div class="board-3d-wrapper">
+            <div class="board-overlay-wrap" id="boardWrap">
+              <canvas id="gameCanvas"></canvas>
+              <div class="game-overlay" id="startOverlay">
+                <div class="overlay-panel">
+                  <div class="overlay-icon" style="color: var(--ng)">◈</div>
+                  <div class="overlay-title" style="color: var(--ng)">
+                    Ready?
+                  </div>
+                  <div class="overlay-score">
+                    Use <strong style="color: var(--txt)">Arrow Keys</strong> to
+                    move
+                  </div>
+                  <button class="overlay-btn" onclick="startGame()">
+                    ▶ Start Game
+                  </button>
+                </div>
+              </div>
+              <div class="game-overlay hidden" id="gameOverOverlay">
+                <div class="overlay-panel">
+                  <div class="overlay-icon" style="color: var(--nr)">✕</div>
+                  <div class="overlay-title" style="color: var(--nr)">
+                    Game Over
+                  </div>
+                  <div class="overlay-score">
+                    Score <span id="final-score">0</span> &nbsp;|&nbsp; Best
+                    <span id="final-best">0</span>
+                  </div>
+                  <button class="overlay-btn" onclick="restartGame()">
+                    ↺ Play Again
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="board-shadow"></div>
+          </div>
+        </div>
+        <div class="mobile-controls">
+          <div class="dpad">
+            <button class="dpad-btn up" onclick="setDir('up')">▲</button>
+            <button class="dpad-btn left" onclick="setDir('left')">◄</button>
+            <button class="dpad-btn right" onclick="setDir('right')">►</button>
+            <button class="dpad-btn down" onclick="setDir('down')">▼</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ EXPIRED ══════════ -->
+    <div class="screen hidden" id="expired-screen">
+      <div class="auth-modal" style="text-align: center">
+        <div class="mc tl"></div>
+        <div class="mc tr"></div>
+        <div class="mc bl"></div>
+        <div class="mc br"></div>
+        <div style="font-size: 2.4rem; margin-bottom: 0.9rem">⏱</div>
+        <h2 class="modal-title" style="color: var(--gold)">Trial Ended!</h2>
+        <p class="modal-sub">YOUR 1-MINUTE GUEST TRIAL HAS EXPIRED</p>
+        <p
+          style="
+            font-size: 0.72rem;
+            color: var(--dim);
+            margin-bottom: 1.4rem;
+            line-height: 1.65;
+          "
+        >
+          Login or create a free account<br />to keep playing without limits.
+        </p>
+        <button
+          class="btn-submit"
+          style="margin-bottom: 0.7rem"
+          onclick="showAuthScreen('signup')"
+        >
+          Create Free Account
+        </button>
+        <button
+          class="auth-btn btn-login"
+          style="width: 100%"
+          onclick="showAuthScreen('login')"
+        >
+          Login to Play
+        </button>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
